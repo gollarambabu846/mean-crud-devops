@@ -6,7 +6,8 @@ pipeline {
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
         VM_IP = "13.235.42.120"
-       SONAR_SERVER_NAME = "SonarQube"
+        // Ensure this matches the Name in Manage Jenkins > System > SonarQube servers
+        SONAR_SERVER_NAME = "SonarQube"
     }
 
     tools {
@@ -21,15 +22,12 @@ pipeline {
             }
         }
 
-stages {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // 2. This pulls the tool from Global Tool Configuration
-                    // Name 'SonarQube' must match the "Name" field in your Tools settings
+                    // This matches the Name in Manage Jenkins > Tools > SonarQube Scanner
                     def scannerHome = tool 'SonarQube' 
 
-                    // 3. This matches the Server name in System Configuration
                     withSonarQubeEnv("${SONAR_SERVER_NAME}") {
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
@@ -44,7 +42,7 @@ stages {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    // This waits for the webhook result from SonarQube
+                    // Note: This requires a Webhook configured in SonarQube
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -73,7 +71,7 @@ stages {
         stage('Push Images to Docker Hub') {
             steps {
                 script {
-                    // 'docker' here is the Credentials ID stored in Jenkins
+                    // 'docker' is the Credentials ID for your Docker Hub login
                     docker.withRegistry('https://index.docker.io/v1/', 'docker') {
                         sh "docker push ${DOCKER_HUB}/${IMAGE_BACKEND}:latest"
                         sh "docker push ${DOCKER_HUB}/${IMAGE_FRONTEND}:latest"
@@ -84,6 +82,7 @@ stages {
 
         stage('Deploy to VM') {
             steps {
+                // 'vm-ssh-key' is the Credentials ID for your VM private key
                 sshagent(['vm-ssh-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} '

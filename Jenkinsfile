@@ -82,7 +82,7 @@ pipeline {
             steps {
                 sshagent(['vm-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP '
+                    ssh -o StrictHostKeyChecking=no ubuntu@13.235.42.120 '
                     cd mean-crud-devops &&
                     docker-compose pull &&
                     docker-compose up -d

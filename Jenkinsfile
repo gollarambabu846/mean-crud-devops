@@ -21,18 +21,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    // This 'SonarQube' must match the name in Jenkins Global Tool Configuration
-                    def scannerHome = tool 'SonarQube' 
+ stage('SonarQube Analysis') {
+    steps {
+        script {
+            // This pulls the scanner you just configured in Step 1
+            def scannerHome = tool 'SonarQube' 
 
-                    withSonarQubeEnv("${SONAR_SERVER}") {
-                        sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                          -Dsonar.projectKey=mean-app \
-                          -Dsonar.sources=.
-                        """
+            // This pulls the server details you configured in Step 2
+            withSonarQubeEnv('sonar-server') { 
+                sh """
+                ${scannerHome}/bin/sonar-scanner \
+                  -Dsonar.projectKey=mean-app \
+                  -Dsonar.sources=.
+                """
                     }
                 }
             }

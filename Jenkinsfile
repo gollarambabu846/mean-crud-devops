@@ -5,8 +5,8 @@ pipeline {
         DOCKER_HUB = "gollarambabu"
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
-        VM_IP = "Y13.235.42.120"
-        SONARQUBE_ENV = "SonarQube"
+        VM_IP = "13.235.42.120"
+        SONAR_SERVER = "sonar-server"
     }
 
     tools {
@@ -18,20 +18,26 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/gollarambabu846/mean-crud-devops.git'
+                    url: 'https://github.com/gollarambabu846/mean-crud-devops.git'
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=mean-app \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://$VM_IP:9000 \
-                      -Dsonar.login=squ_70d1dbd4cc7800ecfa537d2c94628df42ed11055
-                    """
+     stage('SonarQube Analysis') {
+    steps {
+        script {
+            def scannerHome = tool 'SonarQube'   // Must match Global Tool name
+
+            withSonarQubeEnv("${SONAR_SERVER}") {   // MUST be sonar-server
+                sh """
+                ${scannerHome}/bin/sonar-scanner \
+                  -Dsonar.projectKey=mean-app \
+                  -Dsonar.sources=.
+                """
+            }
+        }
+    }
+}
+                    }
                 }
             }
         }
@@ -54,26 +60,23 @@ pipeline {
 
         stage('Build Backend Image') {
             steps {
-                sh "docker build -t $DOCKER_HUB/$IMAGE_BACKEND:latest ./backend"
+                sh "docker build -t ${DOCKER_HUB}/${IMAGE_BACKEND}:latest ./backend"
             }
         }
 
         stage('Build Frontend Image') {
             steps {
-                sh "docker build -t $DOCKER_HUB/$IMAGE_FRONTEND:latest ./frontend"
+                sh "docker build -t ${DOCKER_HUB}/${IMAGE_FRONTEND}:latest ./frontend"
             }
         }
 
         stage('Push Images to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                usernameVariable: 'DOCKER_USER',
-                                passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push $DOCKER_HUB/$IMAGE_BACKEND:latest
-                    docker push $DOCKER_HUB/$IMAGE_FRONTEND:latest
-                    """
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker') {
+                        sh "docker push ${DOCKER_HUB}/${IMAGE_BACKEND}:latest"
+                        sh "docker push ${DOCKER_HUB}/${IMAGE_FRONTEND}:latest"
+                    }
                 }
             }
         }
@@ -82,7 +85,7 @@ pipeline {
             steps {
                 sshagent(['vm-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@13.235.42.120 '
+                    ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} '
                     cd mean-crud-devops &&
                     docker-compose pull &&
                     docker-compose up -d

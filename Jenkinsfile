@@ -6,7 +6,7 @@ pipeline {
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
         VM_IP = "13.235.42.120"
-        SONAR_SERVER = "sonar-server"
+       SONAR_SERVER_NAME = "SonarQube"
     }
 
     tools {
@@ -21,19 +21,21 @@ pipeline {
             }
         }
 
- stage('SonarQube Analysis') {
-    steps {
-        script {
-            // This pulls the scanner you just configured in Step 1
-            def scannerHome = tool 'SonarQube' 
+stages {
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // 2. This pulls the tool from Global Tool Configuration
+                    // Name 'SonarQube' must match the "Name" field in your Tools settings
+                    def scannerHome = tool 'SonarQube' 
 
-            // This pulls the server details you configured in Step 2
-            withSonarQubeEnv('sonar-server') { 
-                sh """
-                ${scannerHome}/bin/sonar-scanner \
-                  -Dsonar.projectKey=mean-app \
-                  -Dsonar.sources=.
-                """
+                    // 3. This matches the Server name in System Configuration
+                    withSonarQubeEnv("${SONAR_SERVER_NAME}") {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                          -Dsonar.projectKey=mean-app \
+                          -Dsonar.sources=.
+                        """
                     }
                 }
             }

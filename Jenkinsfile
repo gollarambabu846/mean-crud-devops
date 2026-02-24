@@ -14,29 +14,25 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
+                git branch: 'main', 
                     url: 'https://github.com/gollarambabu846/mean-crud-devops.git'
             }
         }
 
-     stage('SonarQube Analysis') {
-    steps {
-        script {
-            def scannerHome = tool 'SonarQube'   // Must match Global Tool name
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // This 'SonarQube' must match the name in Jenkins Global Tool Configuration
+                    def scannerHome = tool 'SonarQube' 
 
-            withSonarQubeEnv("${SONAR_SERVER}") {   // MUST be sonar-server
-                sh """
-                ${scannerHome}/bin/sonar-scanner \
-                  -Dsonar.projectKey=mean-app \
-                  -Dsonar.sources=.
-                """
-            }
-        }
-    }
-}
+                    withSonarQubeEnv("${SONAR_SERVER}") {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                          -Dsonar.projectKey=mean-app \
+                          -Dsonar.sources=.
+                        """
                     }
                 }
             }
@@ -45,6 +41,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
+                    // This waits for the webhook result from SonarQube
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -73,6 +70,7 @@ pipeline {
         stage('Push Images to Docker Hub') {
             steps {
                 script {
+                    // 'docker' here is the Credentials ID stored in Jenkins
                     docker.withRegistry('https://index.docker.io/v1/', 'docker') {
                         sh "docker push ${DOCKER_HUB}/${IMAGE_BACKEND}:latest"
                         sh "docker push ${DOCKER_HUB}/${IMAGE_FRONTEND}:latest"

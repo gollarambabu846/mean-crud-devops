@@ -5,7 +5,7 @@ pipeline {
         DOCKER_HUB = "gollarambabu"
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
-        VM_IP = "YOUR_VM_IP"
+        VM_IP = "Y13.235.42.120"
         SONARQUBE_ENV = "SonarQube"
     }
 
@@ -18,7 +18,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/<your-username>/mean-crud-devops.git'
+                url: 'https://github.com/gollarambabu846/mean-crud-devops.git'
             }
         }
 
@@ -30,7 +30,7 @@ pipeline {
                       -Dsonar.projectKey=mean-app \
                       -Dsonar.sources=. \
                       -Dsonar.host.url=http://$VM_IP:9000 \
-                      -Dsonar.login=${SONAR_AUTH_TOKEN}
+                      -Dsonar.login=squ_70d1dbd4cc7800ecfa537d2c94628df42ed11055
                     """
                 }
             }

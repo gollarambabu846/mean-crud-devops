@@ -5,7 +5,7 @@ pipeline {
         DOCKER_HUB = "gollarambabu"
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
-        VM_IP = "13.235.42.120"
+        VM_IP = "65.2.99.12"
         // Ensure this matches the Name in Manage Jenkins > System > SonarQube servers
         SONAR_SERVER_NAME = "SonarQube"
     }

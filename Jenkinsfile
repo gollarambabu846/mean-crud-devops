@@ -79,7 +79,7 @@ pipeline {
             steps {
                 sshagent(['vm-ssh-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} "
+                        ssh -o StrictHostKeyChecking=no ubuntu@65.2.99.12 "
                         docker pull ${DOCKER_HUB}/${IMAGE_BACKEND}:latest &&
                         docker stop mean-app || true &&
                         docker rm mean-app || true &&

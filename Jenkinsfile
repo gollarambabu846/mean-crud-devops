@@ -77,17 +77,13 @@ stage('Quality Gate') {
             }
         }
 
-        stage('Deploy to VM') {
-            steps {
-                // 'vm-ssh-key' is the Credentials ID for your VM private key
-                sshagent(['vm-ssh-key']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} '
-                    cd mean-crud-devops &&
-                    docker-compose pull &&
-                    docker-compose up -d
-                    '
-                    """
+       stage('Deploy to VM') {
+    steps {
+        sshagent(['vm-ssh-key']) {
+            sh """
+                ssh -o StrictHostKeyChecking=no ubuntu@65.2.99.12 \
+                "cd mean-crud-devops && docker-compose pull && docker-compose up -d"
+            """
                 }
             }
         }

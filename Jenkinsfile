@@ -6,7 +6,6 @@ pipeline {
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
         VM_IP = "65.2.99.12"
-        // Ensure this matches the Name in Manage Jenkins > System > SonarQube servers
         SONAR_SERVER_NAME = "SonarQube"
     }
 
@@ -15,9 +14,10 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
-                git branch: 'main', 
+                git branch: 'main',
                     url: 'https://github.com/gollarambabu846/mean-crud-devops.git'
             }
         }
@@ -25,8 +25,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // This matches the Name in Manage Jenkins > Tools > SonarQube Scanner
-                    def scannerHome = tool 'SonarQube' 
+                    def scannerHome = tool 'SonarQube'
 
                     withSonarQubeEnv("${SONAR_SERVER_NAME}") {
                         sh """
@@ -39,11 +38,11 @@ pipeline {
             }
         }
 
-stage('Quality Gate') {
-    steps {
-        echo "Skipping Quality Gate temporarily"
-    }
-}
+        stage('Quality Gate') {
+            steps {
+                echo "Skipping Quality Gate temporarily"
+            }
+        }
 
         stage('OWASP Dependency Check') {
             steps {
@@ -68,7 +67,6 @@ stage('Quality Gate') {
         stage('Push Images to Docker Hub') {
             steps {
                 script {
-                    // 'docker' is the Credentials ID for your Docker Hub login
                     docker.withRegistry('https://index.docker.io/v1/', 'docker') {
                         sh "docker push ${DOCKER_HUB}/${IMAGE_BACKEND}:latest"
                         sh "docker push ${DOCKER_HUB}/${IMAGE_FRONTEND}:latest"
@@ -77,13 +75,17 @@ stage('Quality Gate') {
             }
         }
 
-       stage('Deploy to VM') {
-    steps {
-        sshagent(['vm-ssh-key']) {
-            sh """
-                ssh -o StrictHostKeyChecking=no ubuntu@65.2.99.12 \
-                "cd mean-crud-devops && docker-compose pull && docker-compose up -d"
-            """
+        stage('Deploy to VM') {
+            steps {
+                sshagent(['vm-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} "
+                        docker pull ${DOCKER_HUB}/${IMAGE_BACKEND}:latest &&
+                        docker stop mean-app || true &&
+                        docker rm mean-app || true &&
+                        docker run -d --name mean-app -p 80:3000 ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
+                        "
+                    """
                 }
             }
         }

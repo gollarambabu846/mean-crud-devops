@@ -5,8 +5,8 @@ pipeline {
         DOCKER_HUB = "gollarambabu"
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
-        VM_IP = "65.2.99.12"
-        SONAR_SERVER_NAME = "SonarQube"
+        VM_IP = "13.201.58.235"
+        SONAR_SERVER_NAME = "sonar"
     }
 
     tools {
@@ -25,7 +25,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQube'
+                    def scannerHome = tool 'sonar-scanner'
 
                     withSonarQubeEnv("${SONAR_SERVER_NAME}") {
                         sh """
@@ -47,7 +47,8 @@ pipeline {
         stage('OWASP Dependency Check') {
             steps {
                 dependencyCheck additionalArguments: '--scan .',
-                                odcInstallation: 'OWASP-Dependency-Check'
+                odcInstallation: 'OWASP-Dependency-Check'
+
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -79,7 +80,7 @@ pipeline {
             steps {
                 sshagent(['vm-ssh-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@65.2.99.12 "
+                        ssh -o StrictHostKeyChecking=no ubuntu@${VM_IP} "
                         docker pull ${DOCKER_HUB}/${IMAGE_BACKEND}:latest &&
                         docker stop mean-app || true &&
                         docker rm mean-app || true &&
@@ -92,9 +93,30 @@ pipeline {
     }
 
     post {
+        always {
+            emailext(
+                attachLog: true,
+                subject: "${currentBuild.currentResult}: ${env.JOB_NAME}",
+                body: """
+                <html>
+                <body>
+                    <h2>Build Notification</h2>
+                    <p><b>Project:</b> ${env.JOB_NAME}</p>
+                    <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
+                    <p><b>Status:</b> ${currentBuild.currentResult}</p>
+                    <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                </body>
+                </html>
+                """,
+                to: 'gollarambabu70@gmail.com',
+                mimeType: 'text/html'
+            )
+        }
+
         success {
             echo "Pipeline executed successfully 🚀"
         }
+
         failure {
             echo "Pipeline failed ❌ Check logs"
         }

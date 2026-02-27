@@ -5,7 +5,6 @@ pipeline {
         DOCKER_HUB = "gollarambabu"
         IMAGE_BACKEND = "backend"
         IMAGE_FRONTEND = "frontend"
-        VM_IP = "13.201.58.235"
         SONAR_SERVER_NAME = "sonar"
     }
 
@@ -76,19 +75,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to VM') {
-    steps {
-        sshagent(['vm-ssh-key']) {
-            sh """
-                ssh -o StrictHostKeyChecking=no ubuntu@13.201.58.235 "
-                docker pull ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
+        stage('Run Backend Locally') {
+            steps {
+                script {
+                    // Stop any existing container first
+                    sh "docker stop mean-app 2>/dev/null || true"
+                    sh "docker rm mean-app 2>/dev/null || true"
 
-                docker stop mean-app 2>/dev/null || true
-                docker rm mean-app 2>/dev/null || true
-
-                docker run -d --name mean-app -p 80:5000 ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
-                "
-            """
+                    // Run backend on port 6000 locally
+                    sh """
+                    docker run -d \
+                        --name mean-app \
+                        -p 6000:5000 \
+                        ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
+                    """
                 }
             }
         }
@@ -101,12 +101,12 @@ pipeline {
                 subject: "${currentBuild.currentResult}: ${env.JOB_NAME}",
                 body: """
                 <html>
-                <body>
+                <body style="background-color: #1A237E; color: white; font-weight: bold; padding: 20px;">
                     <h2>Build Notification</h2>
                     <p><b>Project:</b> ${env.JOB_NAME}</p>
                     <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
                     <p><b>Status:</b> ${currentBuild.currentResult}</p>
-                    <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    <p><b>URL:</b> <a style="color: #FFEB3B;" href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                 </body>
                 </html>
                 """,
@@ -117,6 +117,10 @@ pipeline {
 
         success {
             echo "Pipeline executed successfully 🚀"
+        }
+
+        failure {
+            echo "Pipeline failed ❌ Check logs"
         }
     }
 }

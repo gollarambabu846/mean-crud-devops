@@ -86,7 +86,7 @@ pipeline {
                 docker stop mean-app 2>/dev/null || true
                 docker rm mean-app 2>/dev/null || true
 
-                docker run -d --name mean-app -p 80:3000 ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
+                docker run -d --name mean-app -p 80:5000 ${DOCKER_HUB}/${IMAGE_BACKEND}:latest
                 "
             """
                 }
